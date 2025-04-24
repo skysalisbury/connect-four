@@ -22,6 +22,7 @@ const markerEls = [...document.querySelectorAll('#markers > div')]; //Convert th
 
 /*----- event listeners -----*/
 document.getElementById('markers').addEventListener('click', handleDrop)
+playAgainBtn.addEventListener('click', init);
 
 /*----- functions -----*/
 init();
@@ -62,11 +63,10 @@ function handleDrop(evt) {
     const colArr = board[colIdx];
     // 4) Determine the index of the first available "cell" (first `null` element in `colArr`).
     const rowIdx = colArr.indexOf(null);
-    console.log(rowIdx)
     // 5) Update the "cell" in `colArr` with whose turn it is.
     colArr[rowIdx] = turn;
     // 6) Compute and update the state of the game (winner?).
-    
+    winner = getWinner(colIdx, rowIdx);
     // 7) Update whose turn it is.
     turn *= -1;
     // 8) All state has been updated - call render()!
@@ -75,13 +75,60 @@ function handleDrop(evt) {
 
 };
 
+function getWinner(colIdx, rowIdx) {
+    return checkVertical(colIdx, rowIdx) || checkHorizontal(colIdx, rowIdx) || 
+    checkBackslash(colIdx, rowIdx) || checkForwardslash(colIdx, rowIdx);
+};
 
+
+function checkForwardslash(colIdx, rowIdx) {
+    const numLeft = countAdjacent(colIdx, rowIdx, -1, -1);
+    const numRight = countAdjacent(colIdx, rowIdx, 1, 1);
+    return numLeft + numRight >= 3 ? turn : null;
+    
+};    
+
+function checkBackslash(colIdx, rowIdx) {
+    const numLeft = countAdjacent(colIdx, rowIdx, -1, 1);
+    const numRight = countAdjacent(colIdx, rowIdx, 1, -1);
+    return numLeft + numRight >= 3 ? turn : null;
+    
+};    
+
+function checkHorizontal(colIdx, rowIdx) {
+    const numLeft = countAdjacent(colIdx, rowIdx, -1, 0);
+    const numRight = countAdjacent(colIdx, rowIdx, 1, 0);
+    return numLeft + numRight >= 3 ? turn : null;
+    
+};    
+
+function checkVertical(colIdx, rowIdx) {
+    const numBelow = countAdjacent(colIdx, rowIdx, 0, -1);
+    return numBelow === 3 ? turn : null;
+};
+//col/rowDelta represents the value that col/rowIdx will change by after each iteration
+function countAdjacent(colIdx, rowIdx, colDelta, rowDelta) {
+    let count = 0;
+    colIdx += colDelta;
+    rowIdx += rowDelta;
+    //use a while loop when you don't know how many times you need to loop/iterate
+    while (board[colIdx] && board[colIdx][rowIdx] === turn) {
+        count++;
+        colIdx += colDelta;
+        rowIdx += rowDelta;
+    }
+    return count;
+};
 
 function renderControls() {
     //ternary expression - use when you want to return one of two values.
     //<conditional expression> ? <truthy expression>  : <falsy expression>
     playAgainBtn.style.visibility = winner ? 'visible' : 'hidden';
     //TO DO: conditionally render the markers 
+    markerEls.forEach((markerEl, colIdx) => {
+        const showMarker = board[colIdx].includes(null) && !winner;
+        markerEl.style.visibility = showMarker ? 'visible' : 'hidden';
+    });
 };
 
 function renderMessage() {
